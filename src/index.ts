@@ -1,34 +1,39 @@
 import {
-    Keypair,
     Transaction,
     SystemProgram,
     LAMPORTS_PER_SOL,
-    sendAndConfirmTransaction,
     clusterApiUrl,
     Connection,
+    PublicKey,
 } from '@solana/web3.js';
 
-export async function callSolana() {
-
+export async function signAndConfirmTransaction(provider: any, from: string, to: string): Promise<string> {
     const cluster = 'devnet';
     const endpoint = clusterApiUrl(cluster);
     const connection = new Connection(endpoint, 'confirmed');
 
-    // Merchant app generates a random public key referenced by the transaction, in order to locate it after it's sent
-    const from = Keypair.generate();
-
-    // This just represents the to's keypair for testing, in practice it will have a way of signing already
-    const to = Keypair.generate();
+    const fromPubkey = new PublicKey(from);
+    const toPubkey = new PublicKey(to);
 
     const transaction = new Transaction();
 
     transaction.add(
         SystemProgram.transfer({
-            fromPubkey: from.publicKey,
-            toPubkey: to.publicKey,
-            lamports: LAMPORTS_PER_SOL,
+            fromPubkey,
+            toPubkey,
+            lamports: LAMPORTS_PER_SOL / 100,
         }),
     );
 
-    sendAndConfirmTransaction(connection, transaction, [from]);
+    let blockhashObj = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhashObj.blockhash;
+    transaction.feePayer = fromPubkey;
+
+    const { signature } = await provider.signAndSendTransaction(transaction);
+    // Confirm whether the transaction went through or not
+    await connection.confirmTransaction(signature);
+
+    //Signature or the txn hash
+    console.log("Signature: ", signature);
+    return signature;
 }

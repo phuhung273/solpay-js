@@ -9,7 +9,33 @@
 <body>
     <h1>Hello world!</h1>
     <h2>Tip: Check your console</h2>
-    <button onclick="solpay.callSolana()">Click</button>
+    <button id="btn">Click</button>
+
+    <script>
+        window.onload = function () {
+            const getProvider = () => {
+                if ('phantom' in window) {
+                    const provider = window.phantom?.solana;
+
+                    if (provider?.isPhantom) {
+                        return provider;
+                    }
+                }
+
+                window.open('https://phantom.app/', '_blank');
+            };
+
+            const btn = document.getElementById('btn');
+
+            btn.onclick = click;
+
+            async function click() {
+                const provider = getProvider();
+                const from = await provider.connect();
+                solpay.signAndConfirmTransaction(provider, from.publicKey.toString(), 'CwjFqyHh29QC9pSFJAF8ieQaTPX7MzhQV3oUQiAhyowj')
+            }
+        }
+    </script>
 </body>
 
 </html>
